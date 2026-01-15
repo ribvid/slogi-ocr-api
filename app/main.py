@@ -49,12 +49,12 @@ def process_file_with_marker(
 
         try:
             config = {
-                    "--output_format": "markdown",
-                    "--disable_image_extraction": True,
-                    "--extract_images": False,
-                    "--force_ocr": True,
-                    "--strip_existing_ocr": True,
-                }
+                "--output_format": "markdown",
+                "--disable_image_extraction": True,
+                "--extract_images": False,
+                "--force_ocr": True,
+                "--strip_existing_ocr": True,
+            }
                 
             config_parser = ConfigParser(config)
 
