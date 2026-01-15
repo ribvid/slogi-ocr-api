@@ -19,22 +19,14 @@ jobs:
             
             git pull origin main
 
-            # Stop and remove existing container
-            docker stop slogi-ocr-api-container || true
-            docker rm slogi-ocr-api-container || true
-
-            # Remove old image
-            docker rmi slogi-ocr-api-image || true
+            # Stop and remove existing containers
+            docker compose down
             
-            # Build new image
-            docker build -t slogi-ocr-api-image .
-
-            # Run new container
-            docker run -d \
-              --name slogi-ocr-api-container \
-              --restart unless-stopped \
-              -p 127.0.0.1:8080:80 \
-              slogi-ocr-api-image
+            # Remove old images
+            docker compose rm -f
+            
+            # Build and start services
+            docker compose up -d --build
             
             # Clean up dangling images
             docker image prune -f

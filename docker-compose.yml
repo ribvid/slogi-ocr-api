@@ -1,0 +1,47 @@
+services:
+  redis:
+    image: redis:8.4-alpine
+    container_name: slogi-ocr-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: .
+    container_name: sloger-ocr-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./app:/code/app
+      - shared_temp:/tmp/file_processing
+    command: ["fastapi", "run", "app/main.py", "--port", "8080"]
+
+  worker:
+    build: .
+    container_name: slogi-ocr-worker
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./app:/code/app
+      - shared_temp:/tmp/file_processing
+    command: ["rq", "worker", "file_processing", "--url", "redis://redis:6379/0"]
+
+volumes:
+  redis_data:
+  shared_temp:

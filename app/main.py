@@ -1,27 +1,13 @@
-import os
-
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
-import torch
-torch.set_num_threads(1)
-torch.set_num_interop_threads(1)
-
-
 from typing import Annotated
 from fastapi import Depends, FastAPI, UploadFile, HTTPException, BackgroundTasks
 from pathlib import Path
 import shutil
 import tempfile
-from marker.config.parser import ConfigParser
-from marker.converters.pdf import PdfConverter
-from marker.models import create_model_dict
-from marker.output import text_from_rendered
 from sqlmodel import Session
-from db import engine, create_db_and_tables, get_session
+from db import create_db_and_tables, get_session
 from models import Task, TaskPublic, ProcessingStatus
+from redis_conn import task_queue
+from worker import process_file_with_marker
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024 # Maximum file size (10 MB)
@@ -42,59 +28,6 @@ def on_startup():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
-
-
-def process_file_with_marker(
-    task_id: int,
-    temp_file_path: str,
-) -> None:
-    """Process file with marker in background"""
-    with Session(engine) as session:
-        task = session.get(Task, task_id)
-
-        temp_dir = Path(temp_file_path).parent
-
-        if not task:
-            # Clean up temp file if task not found
-            temp_dir.unlink(missing_ok=True)
-            return
-
-        try:
-            config = {
-                "--output_format": "markdown",
-                "--disable_image_extraction": True,
-                "--extract_images": False,
-                "--force_ocr": True,
-                "--strip_existing_ocr": True,
-            }
-                
-            config_parser = ConfigParser(config)
-
-            converter = PdfConverter(
-                config=config_parser.generate_config_dict(),
-                artifact_dict=create_model_dict(),
-            )
-
-            rendered = converter(temp_file_path)
-            
-            text, _, _ = text_from_rendered(rendered)
-
-            task.processed_text = text
-            task.status = ProcessingStatus.completed
-
-            session.add(task)
-            session.commit()
-    
-        except Exception as e:
-            task.status = ProcessingStatus.failed
-            task.error_message = str(e)
-
-            session.add(task)
-            session.commit()
-
-        finally:
-            # Clean up temp directory
-            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 
@@ -131,18 +64,19 @@ async def start_processing_with_marker(
             shutil.copyfileobj(file.file, buffer)
         
         task = Task(
-            status=ProcessingStatus.processing,
+            status=ProcessingStatus.pending,
         )
         
         session.add(task)
         session.commit()
         session.refresh(task)
 
-        # Add background processing task
-        background_tasks.add_task(
+        # Enqueue job to RQ
+        task_queue.enqueue(
             process_file_with_marker,
             task.id,
             str(temp_file_path),
+            job_timeout='15m',  # 15 minutes timeout
         )
 
         return TaskPublic(
