@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /var/www/slogi-ocr-api
+            
+            git pull origin main
+
+            # Stop and remove existing container
+            docker stop slogi-ocr-api-container || true
+            docker rm slogi-ocr-api-container || true
+
+            # Remove old image
+            docker rmi slogi-ocr-api-image || true
+            
+            # Build new image
+            docker build -t slogi-ocr-api-image .
+
+            # Run new container
+            docker run -d \
+              --name slogi-ocr-api-container \
+              --restart unless-stopped \
+              -p 127.0.0.1:8080:80 \
+              slogi-ocr-api-image
+            
+            # Clean up dangling images
+            docker image prune -f
