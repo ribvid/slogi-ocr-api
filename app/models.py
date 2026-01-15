@@ -3,14 +3,14 @@ from sqlmodel import SQLModel, Field
 
 
 class ProcessingStatus(str, Enum):
-    pending = "pending"
+    processing = "processing"
     completed = "completed"
     failed = "failed"
 
 
 class TaskBase(SQLModel):
     status: ProcessingStatus = Field(
-        default=ProcessingStatus.pending, 
+        default=ProcessingStatus.processing, 
         index=True
     )
     
@@ -37,7 +37,7 @@ class TaskPublic(TaskBase):
 
 
 class TaskCreate(SQLModel):
-    status: ProcessingStatus = ProcessingStatus.pending
+    status: ProcessingStatus = ProcessingStatus.processing
 
 
 class TaskUpdate(SQLModel):

@@ -119,7 +119,7 @@ async def start_processing_with_marker(
             shutil.copyfileobj(file.file, buffer)
         
         task = Task(
-            status=ProcessingStatus.pending,
+            status=ProcessingStatus.processing,
         )
         
         session.add(task)
