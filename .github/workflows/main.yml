@@ -30,3 +30,6 @@ jobs:
             
             # Clean up dangling images
             docker image prune -f
+
+            # Show running containers (for verification)
+            docker compose ps
