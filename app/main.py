@@ -54,7 +54,7 @@ async def start_processing_with_marker(
             detail="File is empty"
         )
 
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = tempfile.mkdtemp(dir="/tmp/files")
 
     try:
         safe_filename = Path(file.filename).name

@@ -25,7 +25,7 @@ services:
       - REDIS_PORT=6379
     volumes:
       - ./app:/code/app
-      - shared_temp:/tmp/file_processing
+      - shared_temp:/tmp/files
       - sqlite_data:/code/data
     command: ["fastapi", "run", "app/main.py", "--port", "8080"]
     networks:
@@ -42,7 +42,7 @@ services:
       - REDIS_PORT=6379
     volumes:
       - ./app:/code/app
-      - shared_temp:/tmp/file_processing
+      - shared_temp:/tmp/files
       - sqlite_data:/code/data
     command: ["rq", "worker", "file_processing", "--url", "redis://redis:6379/0"]
     networks:
