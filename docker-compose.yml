@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   redis:
     image: redis:8.4-alpine
@@ -28,6 +26,7 @@ services:
     volumes:
       - ./app:/code/app
       - shared_temp:/tmp/file_processing
+      - sqlite_data:/code/data
     command: ["fastapi", "run", "app/main.py", "--port", "8080"]
     networks:
       - slogi_ocr_network
@@ -44,6 +43,7 @@ services:
     volumes:
       - ./app:/code/app
       - shared_temp:/tmp/file_processing
+      - sqlite_data:/code/data
     command: ["rq", "worker", "file_processing", "--url", "redis://redis:6379/0"]
     networks:
       - slogi_ocr_network
@@ -55,3 +55,4 @@ networks:
 volumes:
   redis_data:
   shared_temp:
+  sqlite_data:
