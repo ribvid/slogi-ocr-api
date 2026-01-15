@@ -11,19 +11,19 @@ from sqlmodel import Session
 from db import engine, create_db_and_tables, get_session
 from models import Task, TaskPublic, ProcessingStatus
 
+
+MAX_FILE_SIZE = 10 * 1024 * 1024 # Maximum file size (10 MB)
+
+
+SessionDep = Annotated[Session, Depends(get_session)]
+
+
 app = FastAPI()
-
-
-# Maximum file size (10 MB)
-MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
-
-
-SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @app.get("/health")
@@ -32,7 +32,10 @@ async def health_check():
     return {"status": "healthy"}
 
 
-def process_file_with_marker(task_id: int, temp_file_path: str) -> None:
+def process_file_with_marker(
+    task_id: int,
+    temp_file_path: str,
+) -> None:
     """Process file with marker in background"""
     with Session(engine) as session:
         task = session.get(Task, task_id)
@@ -86,8 +89,8 @@ def process_file_with_marker(task_id: int, temp_file_path: str) -> None:
 @app.post("/process-with-marker", response_model=TaskPublic, status_code=202)
 async def start_processing_with_marker(
     file: UploadFile,
-    background_tasks:
-    BackgroundTasks, session: SessionDep
+    background_tasks: BackgroundTasks,
+    session: SessionDep,
 ):
     # Validate file size
     file.file.seek(0, 2)  # Seek to end
@@ -148,7 +151,10 @@ async def start_processing_with_marker(
     
 
 @app.get("/status/{task_id}", response_model=TaskPublic)
-def get_task_status(task_id: int, session: SessionDep):
+def get_task_status(
+    task_id: int,
+    session: SessionDep,
+):
     task = session.get(Task, task_id)
 
     if not task:
