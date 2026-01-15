@@ -14,7 +14,7 @@ services:
 
   api:
     build: .
-    container_name: sloger-ocr-api
+    container_name: slogi-ocr-api
     ports:
       - "127.0.0.1:8080:8080"
     restart: on-failure
