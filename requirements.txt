@@ -1,3 +1,4 @@
 fastapi[standard]==0.128.0
 pydantic==2.12.5
 marker-pdf==1.10.1
+sqlmodel==0.0.31
