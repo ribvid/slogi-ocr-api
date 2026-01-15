@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   redis:
     image: redis:8.4-alpine
@@ -9,6 +11,8 @@ services:
       retries: 5
     volumes:
       - redis_data:/data
+    networks:
+      - slogi_ocr_network
 
   api:
     build: .
@@ -17,7 +21,7 @@ services:
       - "127.0.0.1:8080:8080"
     depends_on:
       redis:
-        condition: service_healthy
+        condition: service_started
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -25,13 +29,15 @@ services:
       - ./app:/code/app
       - shared_temp:/tmp/file_processing
     command: ["fastapi", "run", "app/main.py", "--port", "8080"]
+    networks:
+      - slogi_ocr_network
 
   worker:
     build: .
     container_name: slogi-ocr-worker
     depends_on:
       redis:
-        condition: service_healthy
+        condition: service_started
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -39,6 +45,12 @@ services:
       - ./app:/code/app
       - shared_temp:/tmp/file_processing
     command: ["rq", "worker", "file_processing", "--url", "redis://redis:6379/0"]
+    networks:
+      - slogi_ocr_network
+
+networks:
+  slogi_ocr_network:
+    driver: bridge
 
 volumes:
   redis_data:
