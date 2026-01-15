@@ -19,9 +19,9 @@ services:
     container_name: sloger-ocr-api
     ports:
       - "127.0.0.1:8080:8080"
+    restart: on-failure
     depends_on:
-      redis:
-        condition: service_started
+      - redis
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -35,9 +35,9 @@ services:
   worker:
     build: .
     container_name: slogi-ocr-worker
+    restart: on-failure
     depends_on:
-      redis:
-        condition: service_started
+      - redis
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
