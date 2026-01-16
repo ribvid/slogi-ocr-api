@@ -7,7 +7,7 @@ from sqlmodel import Session
 from db import create_db_and_tables, get_session
 from models import Task, TaskPublic, ProcessingStatus
 from redis_conn import task_queue
-from worker import process_file_with_marker
+from worker import process_file_with_tesseract
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024 # Maximum file size (10 MB)
@@ -31,8 +31,8 @@ async def health_check():
 
 
 
-@app.post("/process-with-marker", response_model=TaskPublic, status_code=202)
-async def start_processing_with_marker(
+@app.post("/process-file", response_model=TaskPublic, status_code=202)
+async def start_processing(
     file: UploadFile,
     background_tasks: BackgroundTasks,
     session: SessionDep,
@@ -73,7 +73,7 @@ async def start_processing_with_marker(
 
         # Enqueue job to RQ
         task_queue.enqueue(
-            process_file_with_marker,
+            process_file_with_tesseract,
             task.id,
             str(temp_file_path),
             job_timeout='60m',  # 60 minutes timeout
