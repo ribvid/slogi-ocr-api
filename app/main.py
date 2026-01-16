@@ -76,7 +76,7 @@ async def start_processing_with_marker(
             process_file_with_marker,
             task.id,
             str(temp_file_path),
-            job_timeout='15m',  # 15 minutes timeout
+            job_timeout='60m',  # 60 minutes timeout
         )
 
         return TaskPublic(
